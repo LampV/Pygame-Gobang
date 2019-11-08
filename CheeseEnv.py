@@ -15,34 +15,24 @@ from CheeseAgent import CheeseDQN
 import queue
 
 
-def point_convert(pieces: int, px: int, py: int, line_margin: int, point_thres: float = 0.375):
-    line_thres = line_margin * point_thres
-    for row in range(pieces):
-        for col in range(pieces):
-            if (row + 1) * line_margin - line_thres < py < (row + 1) * line_margin + line_thres and \
-                    (col + 1) * line_margin - line_thres < px < (col + 1) * line_margin + line_thres: \
-                    return row, col
-    return -1, -1
-
-
 class CheeseENV:
-    def __init__(self, enable_pygame=True, screen=None):
+    def __init__(self, enable_pygame=True, **kwargs):
         self.black, self.white = 1, -1
-        self.border_count = 15  # 棋盘有多少棋子
-        self.line_margin = 40  # 两条线之间的距离
+        self.border_count = kwargs['border_count']  # 棋盘有多少棋子
+        self.line_margin = kwargs['line_margin']  # 两条线之间的距离
         self.border_size = self.line_margin * (self.border_count + 1)  # 计算棋盘需要的尺寸
         screen_width, screen_height = self.border_size, self.border_size  # 屏幕尺寸
         self.enable_pygame = enable_pygame
         if self.enable_pygame:
             pygame.init()
-            self.screen = screen if screen else pygame.display.set_mode((screen_width, screen_height), 0, 32)
+            self.screen = pygame.display.set_mode((screen_width, screen_height), 0, 32)
             self.font = pygame.font.SysFont("arial", 32)
-        self.cheese_board = [[0] * 15 for _ in range(15)]
+        self.cheese_board = [[0] * self.border_count for _ in range(self.border_count)]
         self.piece_color = self.black
 
     def reset(self):
         """重置pygame的screen"""
-        self.cheese_board = [[0] * 15 for _ in range(15)]
+        self.cheese_board = [[0] * self.border_count for _ in range(self.border_count)]
         self.piece_color = self.black
         if not self.enable_pygame:
             return
@@ -56,6 +46,16 @@ class CheeseENV:
         for col in range(border_count):
             pygame.draw.line(screen, line_color, ((col + 1) * line_margin, 0), ((col + 1) * line_margin, border_size))
         pygame.display.update()
+
+    def point_convert(self, px: int, py: int, point_thres: float = 0.375):
+        line_margin = self.line_margin
+        line_thres = line_margin * point_thres
+        for row in range(self.border_count):
+            for col in range(self.border_count):
+                if (row + 1) * line_margin - line_thres < py < (row + 1) * line_margin + line_thres and \
+                        (col + 1) * line_margin - line_thres < px < (col + 1) * line_margin + line_thres: \
+                        return row, col
+        return -1, -1
 
     def has_piece(self, _pos) -> bool:
         """
@@ -197,7 +197,7 @@ class CheeseENV:
                     if event.type == MOUSEBUTTONDOWN:
                         x, y = event.pos
                         # 将点击位置转换为棋盘上的点
-                        row, col = point_convert(self.border_count, x, y, self.line_margin, point_thres=0.375)
+                        row, col = self.point_convert(x, y, point_thres=0.375)
                         action = (row, col)
                         if action == (-1, -1) or self.has_piece(action):
                             action = None
@@ -209,8 +209,7 @@ class CheeseENV:
 
 
 if __name__ == '__main__':
-    myScreen = pygame.display.set_mode((640, 640), 0, 32)
-    env = CheeseENV(screen=myScreen)
+    env = CheeseENV(border_count=15, line_margin=40)
     while True:  # 这是维持游戏循环进行的循环
         env.reset()  # 每局游戏开始之前重置环境
         while True:  # 这是每一局游戏内部接受落子的循环
@@ -227,7 +226,7 @@ if __name__ == '__main__':
                 if event.type == MOUSEBUTTONDOWN:
                     x, y = event.pos
                     # 将点击位置转换为棋盘上的点
-                    row, col = point_convert(15, x, y, 40)
+                    row, col = env.point_convert(x, y)
                     action = (row, col)
                     if action == (-1, -1) or env.has_piece(action):
                         action = None
