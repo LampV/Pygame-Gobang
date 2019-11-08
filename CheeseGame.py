@@ -80,7 +80,7 @@ def ai_vs_ai():
 def human_vs_ai():
     cheese_border_size = 15
     env = CheeseENV(border_count=cheese_border_size, line_margin=40)
-    white_agent = CheeseDQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'whiteAgent')
+    white_agent = CheeseDQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, modelname='whiteAgent')
     while True:  # 这是维持游戏循环进行的循环
         print('new game', flush=True)
         state = env.reset()  # 每局游戏开始之前重置环境
@@ -99,6 +99,9 @@ def human_vs_ai():
             next_state, reward, done, _ = env.step(action)
             action = action[0] * cheese_border_size + action[1]
             if done:
+                print(f'''{'black' if env.get_color() == 1 else 'white'} player win!''', flush=True)
+                print('game end, save model.')
+                white_agent.save()
                 break
             white_agent.train(state, next_state, action, -reward)  # 白棋刚好相反
             state = next_state

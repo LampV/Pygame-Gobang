@@ -8,20 +8,19 @@
 import os
 
 import numpy as np
-import tensorflow as tf
-from tensorflow import keras
+import keras
 
 
 class CheeseDQN:
     """使用DQN的强化学习智能体"""
 
-    def __init__(self, input_size, output_size, model_name='agent'):
+    def __init__(self, input_size, output_size, modelname='agent'):
         """通过Keras创建模型，中间层1024个节点，ReLU激活，输出softmax，交叉熵损失函数"""
         self.epsilon, self.epsilon_decay, self.epsilon_min = 1.0, 0.999, 0.1
         self.input_size, self.output_size = input_size, output_size
 
-        if os.path.exists(f'./train/model-{model_name}.h5'):
-            model = tf.keras.models.load_model(f"./train/model-{model_name}.h5")
+        if os.path.exists(f'./train/model-{modelname}.h5'):
+            model = keras.models.load_model(f"./train/model-{modelname}.h5")
         else:
             model = keras.Sequential()
             model.add(keras.layers.Dense(1024, input_shape=(input_size,), activation='relu'))
@@ -31,7 +30,7 @@ class CheeseDQN:
                       metrics=['accuracy'])
 
         self.model = model
-        self.model_name = model_name
+        self.modelname = modelname
 
     def get_action(self, board_state):
         """根据当前state进行预测，state含义是棋盘状态，是一个二维数组"""
@@ -74,7 +73,7 @@ class CheeseDQN:
     def save(self):
         if not os.path.exists('train'):
             os.mkdir('train')
-        self.model.save(f'./train/model-{self.model_name}.h5')
+        self.model.save(f'./train/model-{self.modelname}.h5')
 
 
 if __name__ == '__main__':
