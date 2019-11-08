@@ -1,0 +1,64 @@
+# !/usr/bin/env python
+# coding=utf-8
+# --------------------------------------
+# Copyright: Jiawei Wu
+# 2019/11/08
+# 下五子棋的强化学习AI
+# ---------------------------------------
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+
+
+class CheeseDQN:
+    """使用DQN的强化学习智能体"""
+
+    def __init__(self, input_size, output_size):
+        """通过Keras创建模型，中间层1024个节点，ReLU激活，输出softmax，交叉熵损失函数"""
+        self.input_size, self.output_size = input_size, output_size
+        self.epsilon, self.epsilon_decay, self.epsilon_min = 1.0, 0.999, 0.1
+        model = keras.Sequential()
+        model.add(keras.layers.Dense(1024, input_shape=(input_size,), activation='relu'))
+        model.add(keras.layers.Dense(output_size, activation='softmax'))
+        model.compile(optimizer=tf.train.AdamOptimizer(0.001),
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
+        self.model = model
+
+    def get_action(self, board_state):
+        """根据当前state进行预测，state含义是棋盘状态，是一个二维数组"""
+        board_size = len(board_state)
+        state = np.reshape(board_state, [1, self.input_size])  # 化为列向量
+        model = self.model
+        # 直到网络产生了正确的落子为止
+        while True:
+            # 按照epsilon为概率，随机选取动作或者按价值最大值选取动作
+            if np.random.rand(1) < self.epsilon:
+                action = np.random.randint(self.output_size)
+            else:
+                action = np.argmax(model.predict(state)[0])
+            # 获得动作以后要看是否与之前的棋子重复
+            if board_state[action // board_size][action % board_size] != 0:
+                # 若重复，说明这个动作不应该被选取，让神经网络学习
+                target_f = model.predict(state)
+                target_f[0][action] = -10
+                model.fit(state, target_f, epochs=1, verbose=0)
+                continue
+            else:
+                return action
+
+    def train(self, board_state, board_next_state, action, reward):
+        """
+        对模型进行训练
+        :param board_state: 棋盘的状态（AI落子前）
+        :param board_next_state: 棋盘的下一状态（AI落子后）
+        :param action: AI选择的落子动作
+        :param reward: 游戏奖励
+        """
+        model = self.model
+        state = np.reshape(board_state, [1, self.input_size])  # 化为列向量
+        next_state = np.reshape(board_next_state, [1, self.input_size])  # 化为列向量
+        target = (reward + 0.95 * np.amax(model.predict(next_state)[0]))
+        target_f = model.predict(state)
+        target_f[0][action] = target
+        model.fit(state, target_f, epochs=1, verbose=0)
