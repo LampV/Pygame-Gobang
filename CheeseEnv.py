@@ -16,6 +16,7 @@ class CheeseENV:
         self.enable_pygame = enable_pygame
         self.border_count = kwargs['border_count'] if 'border_count' in kwargs else 15  # 棋盘有多少棋子
         self.line_margin = kwargs['line_margin'] if 'line_margin' in kwargs else 40  # 两条线之间的距离
+        self.ignore_wait = True if 'ignore_wait' in kwargs else False
         self.black, self.white = 1, -1  # 约定棋子颜色
         self.border_size = self.line_margin * (self.border_count + 1)  # 计算棋盘需要的尺寸
 
@@ -107,7 +108,6 @@ class CheeseENV:
             for column in range(border_count):
                 five_pieces = [cheeses[row + i][column] for i in range(5)]  # 纵向五子
                 if operator.eq(five_pieces, black_five):  # 黑胜
-                    print('|')
                     return black
                 if operator.eq(five_pieces, white_five):  # 白胜
                     return white
@@ -116,7 +116,6 @@ class CheeseENV:
             for column in range(border_count - border_res):
                 five_pieces = [cheeses[row][column + j] for j in range(5)]  # 横向五子
                 if operator.eq(five_pieces, black_five):  # 黑胜
-                    print('-')
                     return black
                 if operator.eq(five_pieces, white_five):  # 白胜
                     return white
@@ -125,7 +124,6 @@ class CheeseENV:
             for column in range(border_count - border_res):
                 five_pieces = [cheeses[row + i][column + i] for i in range(5)]  # 右斜五子
                 if operator.eq(five_pieces, black_five):  # 黑胜
-                    print('\\')
                     return black
                 if operator.eq(five_pieces, white_five):  # 白胜
                     return white
@@ -134,7 +132,6 @@ class CheeseENV:
             for column in range(border_count - border_res):
                 five_pieces = [cheeses[row - i][column + i] for i in range(5)]  # 左斜五子
                 if operator.eq(five_pieces, black_five):  # 黑胜
-                    print('/')
                     return black
                 if operator.eq(five_pieces, white_five):  # 白胜
                     return white
@@ -158,18 +155,19 @@ class CheeseENV:
         screen.blit(font.render(content, True, content_color), (200, 200))
         pygame.display.update()
         # 清空事件，等待时间输入激活下一阶段
-        pygame.event.clear()
-        while True:
-            for event in pygame.event.get():
-                if event.type == MOUSEBUTTONDOWN:
-                    break
-                if event.type == KEYDOWN:
-                    break
-                if event.type == QUIT:
-                    exit()
-            else:
-                continue
-            break
+        if not self.ignore_wait:
+            pygame.event.clear()
+            while True:
+                for event in pygame.event.get():
+                    if event.type == MOUSEBUTTONDOWN:
+                        break
+                    if event.type == KEYDOWN:
+                        break
+                    if event.type == QUIT:
+                        exit()
+                else:
+                    continue
+                break
 
     def step(self, _action):
         """
