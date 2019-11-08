@@ -3,39 +3,40 @@
 # --------------------------------------
 # Copyright: Jiawei Wu
 # 2019/11/07
-# pygame Cheese 小游戏
+# pygame Cheese 环境
 # ---------------------------------------
-import threading
-from typing import List, Tuple
 import pygame
 from sys import exit
 from pygame.locals import *
 import operator
-from CheeseAgent import CheeseDQN
-import queue
 
 
 class CheeseENV:
     def __init__(self, enable_pygame=True, **kwargs):
-        self.black, self.white = 1, -1
-        self.border_count = kwargs['border_count']  # 棋盘有多少棋子
-        self.line_margin = kwargs['line_margin']  # 两条线之间的距离
-        self.border_size = self.line_margin * (self.border_count + 1)  # 计算棋盘需要的尺寸
-        screen_width, screen_height = self.border_size, self.border_size  # 屏幕尺寸
         self.enable_pygame = enable_pygame
+        self.border_count = kwargs['border_count'] if 'border_count' in kwargs else 15  # 棋盘有多少棋子
+        self.line_margin = kwargs['line_margin'] if 'line_margin' in kwargs else 40  # 两条线之间的距离
+        self.black, self.white = 1, -1  # 约定棋子颜色
+        self.border_size = self.line_margin * (self.border_count + 1)  # 计算棋盘需要的尺寸
+
         if self.enable_pygame:
             pygame.init()
+            screen_width, screen_height = self.border_size, self.border_size  # 屏幕尺寸
             self.screen = pygame.display.set_mode((screen_width, screen_height), 0, 32)
             self.font = pygame.font.SysFont("arial", 32)
+        # 设置棋盘和棋子颜色
         self.cheese_board = [[0] * self.border_count for _ in range(self.border_count)]
         self.piece_color = self.black
 
     def reset(self):
-        """重置pygame的screen"""
+        """重置环境：将棋盘置为空，将棋子颜色置为黑色，重新绘制screen（如果需要）"""
+        # 重置棋盘
         self.cheese_board = [[0] * self.border_count for _ in range(self.border_count)]
+        # 重置棋子颜色
         self.piece_color = self.black
         if not self.enable_pygame:
-            return
+            return self.get_obs()
+        # 如果开启了pygame，重新绘制screen
         background_color, line_color = (200, 200, 200), (100, 100, 100)
         screen = self.screen
         border_count, line_margin = self.border_count, self.line_margin
@@ -46,8 +47,16 @@ class CheeseENV:
         for col in range(border_count):
             pygame.draw.line(screen, line_color, ((col + 1) * line_margin, 0), ((col + 1) * line_margin, border_size))
         pygame.display.update()
+        return self.get_obs()
 
     def point_convert(self, px: int, py: int, point_thres: float = 0.375):
+        """
+        将鼠标点击点的坐标转换为在棋盘交汇点的坐标
+        :param px: 鼠标点击的x
+        :param py: 鼠标点击的y
+        :param point_thres: 允许的噪声容限
+        :return: 在棋盘的行列值
+        """
         line_margin = self.line_margin
         line_thres = line_margin * point_thres
         for row in range(self.border_count):
@@ -55,6 +64,7 @@ class CheeseENV:
                 if (row + 1) * line_margin - line_thres < py < (row + 1) * line_margin + line_thres and \
                         (col + 1) * line_margin - line_thres < px < (col + 1) * line_margin + line_thres: \
                         return row, col
+        # 如果找不到，返回-1, -1
         return -1, -1
 
     def has_piece(self, _pos) -> bool:
@@ -133,9 +143,9 @@ class CheeseENV:
             return black
         return 0
 
-    def _settle(self, winner):
+    def _pygame_settle(self, winner):
         """
-        处理当前结果
+        处理当前结果（对于pygame而言）
         :param winner: 胜利方
         :return:
         """
@@ -168,15 +178,27 @@ class CheeseENV:
         :return:
         """
         piece_x, piece_y = _action
-        # 落子之后切换当前颜色，返回四元组信息
+        # 落子
         self._piece_down(piece_x, piece_y, self.piece_color)
+        # 判断游戏是否结束
         result = self._judge()
+        # 如果游戏结束且开启pygame，绘制结果
         if result != 0 and self.enable_pygame:
-            self._settle(self.piece_color)
+            self._pygame_settle(self.piece_color)
+        # 翻转棋子颜色
         self.piece_color = -self.piece_color
+        # 返回四元组信息
         return self.cheese_board, -result, result != 0, 'exta info'
 
+    def get_color(self):
+        """返回当前落子的颜色"""
+        return self.piece_color
+
     def get_obs(self):
+        """
+        获取observation
+        :return: 棋盘
+        """
         return self.cheese_board
 
     def run(self):
@@ -209,29 +231,5 @@ class CheeseENV:
 
 
 if __name__ == '__main__':
-    env = CheeseENV(border_count=15, line_margin=40)
-    while True:  # 这是维持游戏循环进行的循环
-        env.reset()  # 每局游戏开始之前重置环境
-        while True:  # 这是每一局游戏内部接受落子的循环
-            action = None
-            for event in pygame.event.get():  # 这是pygame接受输入的循环，直到退出或者落子为止
-                # 点击叉时退出
-                if event.type == QUIT:
-                    exit()
-                # 按下Esc时退出
-                if event.type == KEYDOWN:
-                    if event.key == K_ESCAPE:
-                        exit()
-                # 如果按下鼠标，检查落子，判断游戏是否结束
-                if event.type == MOUSEBUTTONDOWN:
-                    x, y = event.pos
-                    # 将点击位置转换为棋盘上的点
-                    row, col = env.point_convert(x, y)
-                    action = (row, col)
-                    if action == (-1, -1) or env.has_piece(action):
-                        action = None
-                    break
-            if action:
-                next_state, reward, done, _ = env.step(action)
-                if done:
-                    break
+    env = CheeseENV()
+    env.run()
