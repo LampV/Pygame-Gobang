@@ -5,6 +5,7 @@
 # 2019/11/07
 # pygame Cheese 小游戏
 # ---------------------------------------
+import argparse
 
 from CheeseAgent import CheeseDQN
 from CheeseEnv import CheeseENV
@@ -107,4 +108,16 @@ def human_vs_ai():
 
 
 if __name__ == '__main__':
-    ai_vs_ai()
+    parser = argparse.ArgumentParser(description='Game Mode')
+    parser.add_argument('--mode',
+                        type=str,
+                        default='human_ai',
+                        help='Set game mode, Default: human vs ai')
+    args = parser.parse_args()
+    mode = args.mode
+    if mode == 'human_ai':
+        print('Start human vs ai', flush=True)
+        human_vs_ai()
+    if mode == 'ai_ai':
+        print('Start ai vs ai', flush=True)
+        ai_vs_ai()
