@@ -39,7 +39,7 @@ def human_action(env):
             return _action
 
 
-def ai_vs_ai():
+def ai_vs_ai(need_train):
     cheese_border_size = 15
     env = CheeseENV(enable_pygame=False, border_count=cheese_border_size, line_margin=40)
     black_agent = CheeseDQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'blackAgent')
@@ -63,21 +63,23 @@ def ai_vs_ai():
             next_state, reward, done, _ = env.step(action)
             action = action[0] * cheese_border_size + action[1]
             if done:
-                print(f'''{'black' if env.get_color() ==1 else 'white'} player win!''', flush=True)
-                print('game end, save model.')
-                black_agent.save()
-                white_agent.save()
+                print(f'''{'black' if env.get_color() == 1 else 'white'} player win!''', flush=True)
+                if need_train:
+                    print('game end, save model.')
+                    black_agent.save()
+                    white_agent.save()
                 break
-            black_agent.train(state, next_state, action, reward)  # 黑棋的原则是reward最大化，黑棋赢的时候reward是1，输的时候reward是-1
-            white_agent.train(state, next_state, action, -reward)  # 白棋刚好相反
+            if need_train:  # 只有开启train的时候才需要训练
+                black_agent.train(state, next_state, action, reward)  # 黑棋的原则是reward最大化，黑棋赢的时候reward是1，输的时候reward是-1
+                white_agent.train(state, next_state, action, -reward)  # 白棋刚好相反
             state = next_state
-            if step % 20 == 0:
+            if need_train and step % 20 == 0:  # 不用train自然不用save
                 print('save model per 20 steps.')
                 black_agent.save()
                 white_agent.save()
 
 
-def human_vs_ai():
+def human_vs_ai(need_train):
     cheese_border_size = 15
     env = CheeseENV(border_count=cheese_border_size, line_margin=40)
     white_agent = CheeseDQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, modelname='whiteAgent')
@@ -100,12 +102,14 @@ def human_vs_ai():
             action = action[0] * cheese_border_size + action[1]
             if done:
                 print(f'''{'black' if env.get_color() == 1 else 'white'} player win!''', flush=True)
-                print('game end, save model.')
-                white_agent.save()
+                if need_train:
+                    print('game end, save model.')
+                    white_agent.save()
                 break
-            white_agent.train(state, next_state, action, -reward)  # 白棋刚好相反
+            if need_train:  # 只有开启train的时候才需要训练
+                white_agent.train(state, next_state, action, -reward)  # 白棋刚好相反
             state = next_state
-            if step % 20 == 0:
+            if need_train and step % 20 == 0: # 不用train自然不用save
                 print('save model per 20 steps.')
                 white_agent.save()
 
@@ -116,11 +120,16 @@ if __name__ == '__main__':
                         type=str,
                         default='human_ai',
                         help='Set game mode, Default: human vs ai')
+    parser.add_argument('--train',
+                        type=bool,
+                        default='false',
+                        help='Set game mode, Default: human vs ai')
     args = parser.parse_args()
     mode = args.mode
+    train = bool(args.train)
     if mode == 'human_ai':
         print('Start human vs ai', flush=True)
-        human_vs_ai()
+        human_vs_ai(train)
     if mode == 'ai_ai':
         print('Start ai vs ai', flush=True)
-        ai_vs_ai()
+        ai_vs_ai(train)
