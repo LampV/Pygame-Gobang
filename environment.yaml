@@ -1,4 +1,4 @@
-name: base
+name: drl-gobang
 channels:
   - defaults
 dependencies:
