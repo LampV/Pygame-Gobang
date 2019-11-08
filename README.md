@@ -5,13 +5,14 @@ DRL-GoBang
 #### CheeseGame
 代码基于pygame、tensorflow和python3.7  
 因为使用了f_string，请确保python版本>=3.6  
+tensorflow2.0中舍弃了default_graph，建议使用tensorflow==1.13.1   
 可以通过conda创建合适的环境  
 ```bash
 conda env create -f enviornment.yaml
 ```
 运行方式是  
 ```bash
-# conda activate drl-gobang
+# conda activate gobang
 python3 CheeseGame --mode=MODE
 ``` 
 其中*MODE* 可以被指定为 'ai_ai' 和 'human_ai'， 分别表示ai自己训练和人机对战。  
