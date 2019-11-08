@@ -5,6 +5,8 @@
 # 2019/11/08
 # 下五子棋的强化学习AI
 # ---------------------------------------
+import os
+
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -13,17 +15,23 @@ from tensorflow import keras
 class CheeseDQN:
     """使用DQN的强化学习智能体"""
 
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, model_name='agent'):
         """通过Keras创建模型，中间层1024个节点，ReLU激活，输出softmax，交叉熵损失函数"""
-        self.input_size, self.output_size = input_size, output_size
         self.epsilon, self.epsilon_decay, self.epsilon_min = 1.0, 0.999, 0.1
-        model = keras.Sequential()
-        model.add(keras.layers.Dense(1024, input_shape=(input_size,), activation='relu'))
-        model.add(keras.layers.Dense(output_size, activation='softmax'))
-        model.compile(optimizer=tf.train.AdamOptimizer(0.001),
+        self.input_size, self.output_size = input_size, output_size
+
+        if os.path.exists(f'./train/model-{model_name}.h5'):
+            model = tf.keras.models.load_model(f"./train/model-{model_name}.h5")
+        else:
+            model = keras.Sequential()
+            model.add(keras.layers.Dense(1024, input_shape=(input_size,), activation='relu'))
+            model.add(keras.layers.Dense(output_size, activation='softmax'))
+        model.compile(optimizer=keras.optimizers.Adam(0.001),
                       loss='categorical_crossentropy',
                       metrics=['accuracy'])
+
         self.model = model
+        self.model_name = model_name
 
     def get_action(self, board_state):
         """根据当前state进行预测，state含义是棋盘状态，是一个二维数组"""
@@ -62,3 +70,13 @@ class CheeseDQN:
         target_f = model.predict(state)
         target_f[0][action] = target
         model.fit(state, target_f, epochs=1, verbose=0)
+
+    def save(self):
+        if not os.path.exists('train'):
+            os.mkdir('train')
+        self.model.save(f'./train/model-{self.model_name}.h5')
+
+
+if __name__ == '__main__':
+    agent = CheeseDQN(225, 225)
+    agent.save()
