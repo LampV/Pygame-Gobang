@@ -7,7 +7,8 @@
 # ---------------------------------------
 import argparse
 
-from CheeseAgent import CheeseDQN
+from AlphaBeta import AlphaBeta
+from DRLAgent import DQN
 from CheeseEnv import CheeseENV
 import pygame
 from sys import exit
@@ -41,9 +42,9 @@ def human_action(env):
 
 def ai_vs_ai(need_train):
     cheese_border_size = 15
-    env = CheeseENV(enable_pygame=False, border_count=cheese_border_size, line_margin=40)
-    black_agent = CheeseDQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'blackAgent')
-    white_agent = CheeseDQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'whiteAgent')
+    env = CheeseENV(enable_pygame=False, board_count=cheese_border_size, line_margin=40)
+    black_agent = DQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'blackAgent')
+    white_agent = DQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'whiteAgent')
     while True:  # 这是维持游戏循环进行的循环
         print('new game', flush=True)
         state = env.reset()  # 每局游戏开始之前重置环境
@@ -79,10 +80,10 @@ def ai_vs_ai(need_train):
                 white_agent.save()
 
 
-def human_vs_ai(need_train):
+def human_vs_ai():
     cheese_border_size = 15
-    env = CheeseENV(border_count=cheese_border_size, line_margin=40)
-    white_agent = CheeseDQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, modelname='whiteAgent')
+    env = CheeseENV(board_count=cheese_border_size, line_margin=40)
+    agent = AlphaBeta()
     while True:  # 这是维持游戏循环进行的循环
         print('new game', flush=True)
         state = env.reset()  # 每局游戏开始之前重置环境
@@ -91,27 +92,17 @@ def human_vs_ai(need_train):
             if env.get_color() == 1:  # 黑棋，则由人输入
                 action = human_action(env)
             else:  # 白棋，则由agent输入
-                action = white_agent.get_action(state)
-                action = (action // cheese_border_size, action % cheese_border_size)
+                action = agent.get_action(state)
 
             if not action:  # 若是无效action，跳过
                 raise TypeError("不应该出现无效action")
             # 模型训练及保存
             step += 1
             next_state, reward, done, _ = env.step(action)
-            action = action[0] * cheese_border_size + action[1]
             if done:
                 print(f'''{'black' if env.get_color() == 1 else 'white'} player win!''', flush=True)
-                if need_train:
-                    print('game end, save model.')
-                    white_agent.save()
                 break
-            if need_train:  # 只有开启train的时候才需要训练
-                white_agent.train(state, next_state, action, -reward)  # 白棋刚好相反
             state = next_state
-            if need_train and step % 20 == 0: # 不用train自然不用save
-                print('save model per 20 steps.')
-                white_agent.save()
 
 
 if __name__ == '__main__':
@@ -129,7 +120,7 @@ if __name__ == '__main__':
     train = bool(args.train)
     if mode == 'human_ai':
         print('Start human vs ai', flush=True)
-        human_vs_ai(train)
+        human_vs_ai()
     if mode == 'ai_ai':
         print('Start ai vs ai', flush=True)
         ai_vs_ai(train)
