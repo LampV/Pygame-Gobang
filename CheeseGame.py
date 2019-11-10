@@ -84,7 +84,7 @@ def human_action(env):
 def human_vs_ai():
     cheese_border_size = 15
     env = CheeseENV(board_count=cheese_border_size, line_margin=40)
-    agent = AlphaBeta()
+    ai = AlphaBeta()
     while True:  # 这是维持游戏循环进行的循环
         print('new game', flush=True)
         state = env.reset()  # 每局游戏开始之前重置环境
@@ -92,8 +92,8 @@ def human_vs_ai():
         while True:  # 这是每一局游戏内部接受落子的循环
             if env.get_color() == 1:  # 黑棋，则由人输入
                 action = human_action(env)
-            else:  # 白棋，则由agent输入
-                action = agent.get_action(state)
+            else:  # 白棋，则由agent输入·
+                action = ai.get_action(state)
 
             if not action:  # 若是无效action，跳过
                 raise TypeError("不应该出现无效action")
