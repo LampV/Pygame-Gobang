@@ -14,25 +14,25 @@ import operator
 class CheeseENV:
     def __init__(self, enable_pygame=True, **kwargs):
         self.enable_pygame = enable_pygame
-        self.border_count = kwargs['border_count'] if 'border_count' in kwargs else 15  # 棋盘有多少棋子
+        self.board_count = kwargs['board_count'] if 'board_count' in kwargs else 15  # 棋盘有多少棋子
         self.line_margin = kwargs['line_margin'] if 'line_margin' in kwargs else 40  # 两条线之间的距离
         self.ignore_wait = True if 'ignore_wait' in kwargs else False
         self.black, self.white = 1, -1  # 约定棋子颜色
-        self.border_size = self.line_margin * (self.border_count + 1)  # 计算棋盘需要的尺寸
+        self.board_size = self.line_margin * (self.board_count + 1)  # 计算棋盘需要的尺寸
 
         if self.enable_pygame:
             pygame.init()
-            screen_width, screen_height = self.border_size, self.border_size  # 屏幕尺寸
+            screen_width, screen_height = self.board_size, self.board_size  # 屏幕尺寸
             self.screen = pygame.display.set_mode((screen_width, screen_height), 0, 32)
             self.font = pygame.font.SysFont("arial", 32)
         # 设置棋盘和棋子颜色
-        self.cheese_board = [[0] * self.border_count for _ in range(self.border_count)]
+        self.cheese_board = {(row, col): 0 for col in range(self.board_count) for row in  range(self.board_count)}
         self.piece_color = self.black
 
     def reset(self):
         """重置环境：将棋盘置为空，将棋子颜色置为黑色，重新绘制screen（如果需要）"""
         # 重置棋盘
-        self.cheese_board = [[0] * self.border_count for _ in range(self.border_count)]
+        self.cheese_board = {(row, col): 0 for col in range(self.board_count) for row in  range(self.board_count)}
         # 重置棋子颜色
         self.piece_color = self.black
         if not self.enable_pygame:
@@ -40,13 +40,13 @@ class CheeseENV:
         # 如果开启了pygame，重新绘制screen
         background_color, line_color = (200, 200, 200), (100, 100, 100)
         screen = self.screen
-        border_count, line_margin = self.border_count, self.line_margin
+        border_count, line_margin = self.board_count, self.line_margin
         screen.fill(background_color)
-        border_size = self.border_size
+        board_size = self.board_size
         for row in range(border_count):
-            pygame.draw.line(screen, line_color, (0, (row + 1) * line_margin), (border_size, (row + 1) * line_margin))
+            pygame.draw.line(screen, line_color, (0, (row + 1) * line_margin), (board_size, (row + 1) * line_margin))
         for col in range(border_count):
-            pygame.draw.line(screen, line_color, ((col + 1) * line_margin, 0), ((col + 1) * line_margin, border_size))
+            pygame.draw.line(screen, line_color, ((col + 1) * line_margin, 0), ((col + 1) * line_margin, board_size))
         pygame.display.update()
         return self.get_obs()
 
@@ -60,8 +60,8 @@ class CheeseENV:
         """
         line_margin = self.line_margin
         line_thres = line_margin * point_thres
-        for row in range(self.border_count):
-            for col in range(self.border_count):
+        for row in range(self.board_count):
+            for col in range(self.board_count):
                 if (row + 1) * line_margin - line_thres < py < (row + 1) * line_margin + line_thres and \
                         (col + 1) * line_margin - line_thres < px < (col + 1) * line_margin + line_thres: \
                         return row, col
@@ -75,7 +75,7 @@ class CheeseENV:
         :return: 是否有棋子
         """
         row, col = _pos
-        return self.cheese_board[row][col] != 0
+        return self.cheese_board[(row, col)] != 0
 
     def _piece_down(self, row: int, col: int, c: int in [1, -1]):
         """
@@ -87,7 +87,7 @@ class CheeseENV:
         assert (c in [self.black, self.white])  # 确保color合法
         piece_color = (0, 0, 0) if c == self.black else (255, 255, 255)
         line_margin = self.line_margin
-        self.cheese_board[row][col] = c
+        self.cheese_board[(row, col)] = c  # 覆盖写入颜色
         # 在pygame绘制
         if self.enable_pygame:
             pygame.draw.circle(self.screen, piece_color, ((col + 1) * line_margin, (row + 1) * line_margin), 17)
@@ -99,44 +99,34 @@ class CheeseENV:
         :return: 当前胜利者 {1: 黑棋, -1: 白棋, 0: 暂时无人胜利}
         """
         black, white = self.black, self.white
-        border_count = self.border_count
-        border_res = 4  # 因为是五子棋，判断是否有五子连环的时候在距离边界为4的位置就可以停止了
-        black_five, white_five = [black for _ in range(5)], [white for _ in range(5)]
+        board_count = self.board_count
         cheeses = self.cheese_board
-        # 纵向判断是否有五子连环
-        for row in range(border_count - border_res):
-            for column in range(border_count):
-                five_pieces = [cheeses[row + i][column] for i in range(5)]  # 纵向五子
-                if operator.eq(five_pieces, black_five):  # 黑胜
+        # 遍历所有点
+        for row in range(board_count):
+            for col in range(board_count):
+                # 横向判断是否有五子连环
+                if all((row, col + i) in cheeses and cheeses[(row, col + i)] == black for i in range(5)):
                     return black
-                if operator.eq(five_pieces, white_five):  # 白胜
+                if all((row, col + i) in cheeses and cheeses[(row, col + i)] == white for i in range(5)):
                     return white
-        # 横向判断是否有五子连环
-        for row in range(border_count):
-            for column in range(border_count - border_res):
-                five_pieces = [cheeses[row][column + j] for j in range(5)]  # 横向五子
-                if operator.eq(five_pieces, black_five):  # 黑胜
+                # 纵向判断是否有五子连环
+                if all((row + i, col) in cheeses and cheeses[(row + i, col)] == black for i in range(5)):
                     return black
-                if operator.eq(five_pieces, white_five):  # 白胜
+                if all((row + i, col) in cheeses and cheeses[(row + i, col)] == white for i in range(5)):
                     return white
-        # 向右下斜向判断是否有五子连环
-        for row in range(border_count - border_res):
-            for column in range(border_count - border_res):
-                five_pieces = [cheeses[row + i][column + i] for i in range(5)]  # 右斜五子
-                if operator.eq(five_pieces, black_five):  # 黑胜
+                # 右斜下判断是否有五子连环
+                if all((row + i, col + i) in cheeses and cheeses[(row + i, col + i)] == black for i in range(5)):
                     return black
-                if operator.eq(five_pieces, white_five):  # 白胜
+                if all((row + i, col + i) in cheeses and cheeses[(row + i, col + i)] == white for i in range(5)):
                     return white
-        # 向左下斜向判断是否有五子连环
-        for row in range(border_res, border_count):
-            for column in range(border_count - border_res):
-                five_pieces = [cheeses[row - i][column + i] for i in range(5)]  # 左斜五子
-                if operator.eq(five_pieces, black_five):  # 黑胜
+                # 左斜下判断是否有五子连环
+                if all((row - i, col + i) in cheeses and cheeses[(row - i, col + i)] == black for i in range(5)):
                     return black
-                if operator.eq(five_pieces, white_five):  # 白胜
+                if all((row - i, col + i) in cheeses and cheeses[(row - i, col + i)] == white for i in range(5)):
                     return white
+
         # 若棋盘满了，黑胜
-        if sum([cheese_board_row.count(0) for cheese_board_row in cheeses]) == 0:
+        if 0 not in cheeses.values():
             return black
         return 0
 
