@@ -40,44 +40,45 @@ def human_action(env):
             return _action
 
 
-def ai_vs_ai(need_train):
-    cheese_border_size = 15
-    env = CheeseENV(enable_pygame=False, board_count=cheese_border_size, line_margin=40)
-    black_agent = DQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'blackAgent')
-    white_agent = DQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'whiteAgent')
-    while True:  # 这是维持游戏循环进行的循环
-        print('new game', flush=True)
-        state = env.reset()  # 每局游戏开始之前重置环境
-        step = 0
-        while True:  # 这是每一局游戏内部接受落子的循环
-            if env.get_color() == 1:  # 黑棋，则由人输入
-                action = black_agent.get_action(state)
-                action = (action // cheese_border_size, action % cheese_border_size)
-            else:  # 白棋，则由agent输入
-                action = white_agent.get_action(state)
-                action = (action // cheese_border_size, action % cheese_border_size)
-
-            if not action:  # 若是无效action，跳过
-                raise TypeError("不应该出现无效action!")
-            # 模型训练及保存
-            step += 1
-            next_state, reward, done, _ = env.step(action)
-            action = action[0] * cheese_border_size + action[1]
-            if done:
-                print(f'''{'black' if env.get_color() == 1 else 'white'} player win!''', flush=True)
-                if need_train:
-                    print('game end, save model.')
-                    black_agent.save()
-                    white_agent.save()
-                break
-            if need_train:  # 只有开启train的时候才需要训练
-                black_agent.train(state, next_state, action, reward)  # 黑棋的原则是reward最大化，黑棋赢的时候reward是1，输的时候reward是-1
-                white_agent.train(state, next_state, action, -reward)  # 白棋刚好相反
-            state = next_state
-            if need_train and step % 20 == 0:  # 不用train自然不用save
-                print('save model per 20 steps.')
-                black_agent.save()
-                white_agent.save()
+# AI对战自动学习。因为DRL代码未完成暂时废弃
+# def ai_vs_ai(need_train):
+#     cheese_border_size = 15
+#     env = CheeseENV(enable_pygame=False, board_count=cheese_border_size, line_margin=40)
+#     black_agent = DQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'blackAgent')
+#     white_agent = DQN(cheese_border_size * cheese_border_size, cheese_border_size * cheese_border_size, 'whiteAgent')
+#     while True:  # 这是维持游戏循环进行的循环
+#         print('new game', flush=True)
+#         state = env.reset()  # 每局游戏开始之前重置环境
+#         step = 0
+#         while True:  # 这是每一局游戏内部接受落子的循环
+#             if env.get_color() == 1:  # 黑棋，则由人输入
+#                 action = black_agent.get_action(state)
+#                 action = (action // cheese_border_size, action % cheese_border_size)
+#             else:  # 白棋，则由agent输入
+#                 action = white_agent.get_action(state)
+#                 action = (action // cheese_border_size, action % cheese_border_size)
+#
+#             if not action:  # 若是无效action，跳过
+#                 raise TypeError("不应该出现无效action!")
+#             # 模型训练及保存
+#             step += 1
+#             next_state, reward, done, _ = env.step(action)
+#             action = action[0] * cheese_border_size + action[1]
+#             if done:
+#                 print(f'''{'black' if env.get_color() == 1 else 'white'} player win!''', flush=True)
+#                 if need_train:
+#                     print('game end, save model.')
+#                     black_agent.save()
+#                     white_agent.save()
+#                 break
+#             if need_train:  # 只有开启train的时候才需要训练
+#                 black_agent.train(state, next_state, action, reward)  # 黑棋的原则是reward最大化，黑棋赢的时候reward是1，输的时候reward是-1
+#                 white_agent.train(state, next_state, action, -reward)  # 白棋刚好相反
+#             state = next_state
+#             if need_train and step % 20 == 0:  # 不用train自然不用save
+#                 print('save model per 20 steps.')
+#                 black_agent.save()
+#                 white_agent.save()
 
 
 def human_vs_ai():
@@ -121,6 +122,7 @@ if __name__ == '__main__':
     if mode == 'human_ai':
         print('Start human vs ai', flush=True)
         human_vs_ai()
-    if mode == 'ai_ai':
-        print('Start ai vs ai', flush=True)
-        ai_vs_ai(train)
+    # 因为AI对战代码废弃，暂时不开启
+    # if mode == 'ai_ai':
+    #     print('Start ai vs ai', flush=True)
+    #     ai_vs_ai(train)
