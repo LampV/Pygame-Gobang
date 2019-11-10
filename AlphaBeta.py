@@ -1,8 +1,12 @@
+# !/usr/bin/env python
+# coding=utf-8
+# --------------------------------------
+# Copyright: Jiawei Wu
+# 2019/11/11
+# 基于Alpha-Beta剪枝树的博弈算法
+# ---------------------------------------
 import copy
-from math import *
 from typing import List
-
-import numpy as np
 from CheeseEnv import game_end, black, white
 # from DRLAgent import DDPG
 from StaticEval import StaticEval
@@ -95,6 +99,6 @@ class AlphaBeta:
         row, col = point
         cheeses = self.cheese_board
         board_count = len(cheeses)
-        if any(cheeses[r][c] != 0 for r in range(max(0, row - 1), min(row + 2, board_count)) for c in range(max(0, col - 1), min(col + 2, board_count))):
+        if any(cheeses[r][c] != 0 for r in range(max(0, row - 1), min(row + 1, board_count)) for c in range(max(0, col - 1), min(col + 1, board_count))):
             return True
         return False

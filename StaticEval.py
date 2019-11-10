@@ -1,5 +1,12 @@
-from typing import List
+# !/usr/bin/env python
+# coding=utf-8
+# --------------------------------------
+# Copyright: Jiawei Wu
+# 2019/11/07
+# pygame 静态得分表算法计算棋局分数
+# ---------------------------------------
 
+from typing import List
 from CheeseEnv import black, white
 
 # 棋型的评估分数
@@ -37,6 +44,17 @@ shape_score = [(50, (0, 1, 1, 0, 0)),
 
 
 def cal_score(m, n, x_decrict, y_derice, enemy_list, my_list, score_all_arr):
+    """
+    对于指定坐标、方向，计算总得分
+    :param m: 坐标x值
+    :param n: 坐标y值
+    :param x_decrict: x方向增量（即x轴方向）
+    :param y_derice: y方向增量（即y轴方向）
+    :param enemy_list: 对手列表
+    :param my_list:     自己列表
+    :param score_all_arr: 得分序列
+    :return: 总得分
+    """
     add_score = 0  # 加分项
     # 在一个方向上， 只取最大的得分项
     max_score_shape = (0, [])
