@@ -11,7 +11,7 @@ import numpy as np
 import keras
 
 
-class CheeseDQN:
+class DQN:
     """使用DQN的强化学习智能体"""
 
     def __init__(self, input_size, output_size, modelname='agent'):
@@ -77,5 +77,5 @@ class CheeseDQN:
 
 
 if __name__ == '__main__':
-    agent = CheeseDQN(225, 225)
+    agent = DQN(225, 225)
     agent.save()
