@@ -99,6 +99,6 @@ class AlphaBeta:
         row, col = point
         cheeses = self.cheese_board
         board_count = len(cheeses)
-        if any(cheeses[r][c] != 0 for r in range(max(0, row - 1), min(row + 1, board_count)) for c in range(max(0, col - 1), min(col + 1, board_count))):
+        if any(cheeses[r][c] != 0 for r in range(max(0, row - 1), min(row + 2, board_count)) for c in range(max(0, col - 1), min(col + 2, board_count))):
             return True
         return False
