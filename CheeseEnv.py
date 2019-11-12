@@ -14,6 +14,7 @@ from pygame.locals import *
 
 black = 1
 white = -1
+blank = 0
 
 
 def game_end(cheeses: List[List[int]]) -> int in [1, -1, 0]:
@@ -115,7 +116,7 @@ class CheeseENV:
             for col in range(self.board_count):
                 if (row + 1) * line_margin - line_thres < py < (row + 1) * line_margin + line_thres and \
                         (col + 1) * line_margin - line_thres < px < (col + 1) * line_margin + line_thres:
-                        return row, col
+                    return row, col
         # 如果找不到，返回-1, -1
         return -1, -1
 

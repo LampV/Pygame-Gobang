@@ -8,7 +8,6 @@
 import argparse
 
 from AlphaBeta import AlphaBeta
-from DRLAgent import DQN
 from CheeseEnv import CheeseENV
 import pygame
 from sys import exit
