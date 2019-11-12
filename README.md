@@ -3,13 +3,13 @@ Pygame-GoBang
 五子棋游戏的Pygame实现
 > 注意Mac更新了Mojave之后无法运行Pygame，请在conda环境下执行命令
 #### 游戏主程序`CheeseGame`
-代码基于pygame、tensorflow和python3.7  
+代码基于pygamepython3.7  
 因为使用了f_string，请确保python版本>=3.6  
-tensorflow2.0中舍弃了default_graph，建议使用tensorflow==1.13.1   
-可以通过conda创建合适的环境  
+~~可以通过conda创建合适的环境~~  
 ```bash
-conda env create -f enviornment.yaml
+# conda env create -f enviornment.yaml
 ```
+只需要安装了pygame就可以运行
 运行方式是  
 ```bash
 # conda activate gobang
